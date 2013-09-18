@@ -138,9 +138,22 @@ namespace app
     {
         if (isset($_GET['collection'])) {
             $collection = \globals\vars('collection', $_GET['collection']);
-            $page = \page\params(\db\mongo()->$collection->find()->count());
-            \globals\vars('pagination', \page\pagination($page['pages'], $page['current']));
-            \globals\vars('find', \db\mongo()->$collection->find()->sort(array('_id' => -1))->skip($page['skip'])->limit($page['limit']));
+            $find = array();
+
+            if (isset($_GET['find']) && \strlen($_GET['find']) > 0) {
+                $find = json_decode(str_replace("'", '"', $_GET['find']));
+                if (!$find) {
+                    $find = array();
+                    \globals\vars('find_error', 'Error in query!');
+                }
+
+            }
+
+            if (!\globals\vars('find_error')) {
+                $page = \page\params(\db\mongo()->$collection->find($find)->count());
+                \globals\vars('pagination', \page\pagination($page['pages'], $page['current']));
+                \globals\vars('find', \db\mongo()->$collection->find($find)->sort(array('_id' => -1))->skip($page['skip'])->limit($page['limit']));
+            }
         }
     }
 
@@ -190,8 +203,6 @@ namespace template { ?>
         .pagination {
             display: inline-block;
             padding-left: 0;
-            margin: 20px 0;
-            border-radius: 4px
         }
         .pagination>li {
             display: inline;
@@ -217,8 +228,19 @@ namespace template { ?>
             border: 1px solid #428bca;
             color: #fff
         }
-        .dbs {
+        .dbs, .find {
             padding: 20px 6px;
+        }
+        input[type="text"] {
+            border: 1px solid #428bca;
+            height: 20px
+        }
+        input.query {
+            width: 300px
+        }
+        .error {
+            font-weight: bold;
+            color: #d44950
         }
     </style>
   </head>
@@ -235,15 +257,28 @@ namespace template { ?>
                 <input type="submit" value="Change DB" />
             </form>
         </div>
-        <div class="collections">
         <?php if (\globals\vars('collections')): ?>
+        <div class="collections">
             <?php foreach (\globals\vars('collections') as $collection): ?>
                 <a href="<?= \utils\query('collection', $collection) ?>" class="<?= isset($_GET['collection']) && $_GET['collection'] == $collection ? 'active':'' ?>"><?= $collection ?></a>
             <?php endforeach ?>
-        <?php endif ?>
         </div>
-        <div>
+        <?php endif ?>
         <?php if (\globals\vars('collection')): ?>
+        <div class="find">
+            <form>
+            <input type="hidden" name="db" value="<?= \globals\vars('db') ?>" />
+            <input type="hidden" name="collection" value="<?= \globals\vars('collection') ?>" />
+            Query <input type="text" class="query" placeholder='{"userId": 1}' name="find" value='<?= isset($_GET['find']) ? str_replace("'", '"', $_GET['find']):'' ?>' />
+            <input type="submit" value="Find" />
+            <?php if (\globals\vars('find_error')): ?>
+            <span class="error"><?= \globals\vars('find_error') ?></span>
+            <?php endif ?>
+            </form>
+        </div>
+        <?php endif ?>
+        <div>
+        <?php if (\globals\vars('find')): ?>
             <?= \globals\vars('pagination') ?>
             <?php foreach (\globals\vars('find') as $f): ?>
                 <pre><?= json_encode($f, JSON_PRETTY_PRINT) ?></pre>
