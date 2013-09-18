@@ -31,8 +31,9 @@ namespace utils
     {
         $get_params = $_GET;
 
-        if ($param && $param != 'page' && isset($get_params['page'])) {
+        if ($param != 'page') {
             unset($get_params['page']);
+            unset($get_params['find']);
         }
 
         if ($param && $change) {
