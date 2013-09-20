@@ -204,6 +204,7 @@ namespace template { ?>
             margin: 60px 0 0 50px;
         }
         .pagination {
+            font-weight: bold;
             display: inline-block;
             padding-left: 0;
         }
@@ -254,6 +255,7 @@ namespace template { ?>
             color: #d44950
         }
         #header {
+            font-weight: bold;
             background-color: #222222;
             min-width: 670px;
             width: 100%;
