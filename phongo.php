@@ -182,14 +182,15 @@ namespace template { ?>
             font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
             font-size: 14px;
             line-height: 1.428571429;
-            color: #333
+            color: #333;
+            margin: 0;
         }
         a {
-            color: #428bca;
+            color: gray;
             text-decoration: none
         }
         a:hover, a:focus {
-            color: #2a6496;
+            color: black;
             text-decoration: underline
         }
         a:focus {
@@ -198,8 +199,9 @@ namespace template { ?>
             outline-offset: -2px
         }
         #container { 
+            min-width: 300px;
             width: 900px; 
-            margin: 0 auto
+            margin: 60px 0 0 50px;
         }
         .pagination {
             display: inline-block;
@@ -216,8 +218,8 @@ namespace template { ?>
             border: 1px solid #ddd
         }
         .pagination>li.active>a {
-            background-color: #428bca;
-            border: 1px solid #428bca;
+            background-color: gray;
+            border: 1px solid gray;
             color: #fff
         }
         .collections>a {
@@ -225,59 +227,88 @@ namespace template { ?>
         }
         .collections>a.active {
 
-            background-color: #428bca;
-            border: 1px solid #428bca;
-            color: #fff
+            background-color: gray;
+            border: 1px solid gray;
+            color: white;
         }
-        .dbs, .find {
-            padding: 20px 6px;
+        .dbs {
+            padding-right: 20px;
         }
         input[type="text"] {
-            border: 1px solid #428bca;
-            height: 20px
+            border: none;
+            height: 22px
         }
         input.query {
-            width: 300px
+            background: #131313;
+            border: 0;
+            height: 23px;
+            color: white;
+            font-size: 15px;
+            border-radius: 0px;
+            border-bottom: 1px solid #3f3f3f;
+            width: 300px;
+            padding-left: 5px;
         }
         .error {
             font-weight: bold;
             color: #d44950
         }
+        #header {
+            background-color: #222222;
+            min-width: 670px;
+            width: 100%;
+            top: 0;
+            position: fixed;
+            color: white;
+            padding: 10px;
+            border-bottom: 1px solid gray;
+        }
+        .logo {
+            font-weight: bold;
+            margin-right: 30px;
+        }
     </style>
   </head>
   <body>
-    <div id="container">
-        <div class="dbs">
-            <form>
-                DBs list
+    <div id="header">
+        <div style="float: left">
+            <span class="logo">Phongo</span>
+            <span class="dbs">
+                DB
                 <select id="db-list" name="db">
                 <?php foreach (\globals\vars('db_list') as $db): ?>
                     <option value="<?= $db ?>" <?= isset($_GET['db']) && $db == $_GET['db'] ? 'selected="selected"':'' ?>><?= $db ?></option>
                 <?php endforeach ?>
                 </select>
-                <input type="submit" value="Change DB" />
-            </form>
-        </div>
-        <?php if (\globals\vars('collections')): ?>
-        <div class="collections">
-            <?php foreach (\globals\vars('collections') as $collection): ?>
-                <a href="<?= \utils\query('collection', $collection) ?>" class="<?= isset($_GET['collection']) && $_GET['collection'] == $collection ? 'active':'' ?>"><?= $collection ?></a>
-            <?php endforeach ?>
-        </div>
-        <?php endif ?>
-        <?php if (\globals\vars('collection')): ?>
-        <div class="find">
-            <form>
-            <input type="hidden" name="db" value="<?= \globals\vars('db') ?>" />
-            <input type="hidden" name="collection" value="<?= \globals\vars('collection') ?>" />
-            Query <input type="text" class="query" placeholder='{"userId": 1}' name="find" value='<?= isset($_GET['find']) ? str_replace("'", '"', $_GET['find']):'' ?>' />
-            <input type="submit" value="Find" />
-            <?php if (\globals\vars('find_error')): ?>
-            <span class="error"><?= \globals\vars('find_error') ?></span>
+            </span>
+            <span class="collections">
+            <?php if (\globals\vars('collections')): ?>
+                Collection
+                <select id="collections">
+                    <option></option>
+                <?php foreach (\globals\vars('collections') as $collection): ?>
+                    <option <?= isset($_GET['collection']) && $_GET['collection'] == $collection ? 'selected':'' ?> href="<?= \utils\query('collection', $collection) ?>"><?= $collection ?></option>
+                <?php endforeach ?>
+                </select>
             <?php endif ?>
-            </form>
+            </span>
         </div>
+        <div style="float: right; padding-right: 30px">
+            <?php if (\globals\vars('collection')): ?>
+            <form>
+                <?php if (\globals\vars('find_error')): ?>
+                <span class="error"><?= \globals\vars('find_error') ?></span>
+                <?php endif ?>
+                <input type="hidden" name="db" value="<?= \globals\vars('db') ?>" />
+                <input type="hidden" name="collection" value="<?= \globals\vars('collection') ?>" />
+                <input type="text" class="query" placeholder='{"userId": 1}' name="find" value='<?= isset($_GET['find']) ? str_replace("'", '"', $_GET['find']):'' ?>' />
+            </form>
         <?php endif ?>
+        </div>
+        <div style="clear: both"></div>
+    </div>
+    <div id="container">
+        
         <div>
         <?php if (\globals\vars('find')): ?>
             <?= \globals\vars('pagination') ?>
@@ -288,6 +319,17 @@ namespace template { ?>
         <?php endif ?>
         </div>
     </div>
+    <script>
+        (function () {
+            document.getElementById('db-list').onchange = function () {
+                document.location = '?db=' + this.options[this.selectedIndex].value;
+            };
+
+            document.getElementById('collections').onchange = function () {
+                document.location = '?db=' + document.getElementById('db-list').options[document.getElementById('db-list').selectedIndex].value + '&collection=' + this.options[this.selectedIndex].value;
+            };
+        }());
+    </script>
   </body>
 </html>
 <?php } ?>
