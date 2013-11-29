@@ -1,173 +1,154 @@
 <?php
 
-namespace db
+error_reporting(E_ALL);
+ini_set('error_reporting', E_ALL);
+
+function mongo($db = null)
 {
-    function mongo($db = null)
-    {
-        static $mongo;
+    static $mongo;
 
-        if (!isset($mongo)) {
-            $mongo = new \Mongo;
+    if (!isset($mongo)) {
+        $mongo = new Mongo;
+    }
+
+    if ($db) {
+        $mongo = $mongo->selectDB($db);
+    }
+
+    return $mongo;
+}
+
+function wtf($what)
+{
+    echo '<pre>';
+    print_r($what);
+    echo '</pre>';
+}
+
+function query($param = '', $change = '')
+{
+    $get_params = $_GET;
+
+    if ($param != 'page') {
+        unset($get_params['page']);
+        unset($get_params['find']);
+    }
+
+    if ($param && $change) {
+        $get_params[$param] = $change;
+    }
+
+    return urldecode('?' . http_build_query($get_params));
+}
+
+function global_vars($name, $value = null)
+{
+    static $vars = array();
+    if ($value) $vars[$name] = $value;
+    return isset($vars[$name]) ? $vars[$name] : null;
+}
+
+function current_page()
+{
+    $page = 1;
+    if (isset($_GET['page'])) {
+        $page = intVal($_GET['page']);
+
+        if ($page <= 0) {
+            $page = 1;
+        }
+    }
+
+    return $page;
+}
+
+function page_params($count)
+{
+    $limit = 100;
+    $page = current_page();
+    $skip = $limit * ($page - 1);
+
+    if ($skip >= $count) {
+        $skip = 0;
+    }
+
+    $pages = ceil($count / $limit);
+
+    return [
+        'current' => $page,
+        'pages' => $pages,
+        'limit' => $limit,
+        'skip' => $skip
+    ];
+}
+
+function pagination($pages, $current)
+{
+    $html = '';
+
+    if ($pages > 1) {
+        $html = '<select id="pagination">';
+
+        for ($p = 1; $p <= $pages; $p++) {
+            $selected = $current == $p ? 'selected="selected"' : '';
+            $html .= "<option {$selected}>{$p}</li>";
         }
 
-        if ($db) {
-            $mongo = $mongo->selectDB($db);
-        }
+        $html .= '</select>';
+    }
 
-        return $mongo;
+    return $html;
+}
+
+function set_dbs_list()
+{
+    $db_list = mongo()->admin->command(array('listDatabases' => 1));
+    $db_list = array_map(function ($i) { return $i['name']; }, $db_list['databases']);
+    global_vars('db_list', $db_list);
+}
+
+function change_db()
+{
+    if (isset($_GET['db'])) {
+        mongo($_GET['db']);
+        global_vars('db', $_GET['db']);
+        global_vars('collections', array_map(function ($i) { return preg_replace('/^(.*)\./', '', $i); }, mongo()->listCollections()));
     }
 }
 
-namespace utils
+function find()
 {
-    function wtf($what)
-    {
-        echo '<pre>';
-        print_r($what);
-        echo '</pre>';
-    }
+    if (isset($_GET['collection'])) {
+        $collection = global_vars('collection', $_GET['collection']);
+        $find = array();
 
-    function query($param = '', $change = '')
-    {
-        $get_params = $_GET;
-
-        if ($param != 'page') {
-            unset($get_params['page']);
-            unset($get_params['find']);
-        }
-
-        if ($param && $change) {
-            $get_params[$param] = $change;
-        }
-
-        return urldecode('?' . http_build_query($get_params));
-    }
-}
-
-namespace globals
-{
-    function vars($name, $value = null)
-    {
-        static $vars = array();
-        if ($value) $vars[$name] = $value;
-        return isset($vars[$name]) ? $vars[$name] : null;
-    }
-}
-
-namespace page
-{
-    function current()
-    {
-        $page = 1;
-        if (isset($_GET['page'])) {
-            $page = intVal($_GET['page']);
-
-            if ($page <= 0) {
-                $page = 1;
-            }
-        }
-
-        return $page;
-    }
-
-    function params($count)
-    {
-        $limit = 100;
-        $page = current();
-        $skip = $limit * ($page - 1);
-
-        if ($skip >= $count) {
-            $skip = 0;
-        }
-
-        $pages = ceil($count / $limit);
-
-        return [
-            'current' => $page,
-            'pages' => $pages,
-            'limit' => $limit,
-            'skip' => $skip
-        ];
-    }
-
-    function pagination($pages, $current)
-    {
-        $html = '';
-
-        if ($pages > 1) {
-            $html = '<select id="pagination">';
-
-            for ($p = 1; $p <= $pages; $p++) {
-                $selected = $current == $p ? 'selected="selected"' : '';
-                $html .= "<option {$selected}>{$p}</li>";
-            }
-
-            $html .= '</select>';
-        }
-
-        return $html;
-    }
-}
-
-namespace app
-{
-    function init()
-    {
-        error_reporting(E_ALL);
-        ini_set('error_reporting', E_ALL);
-    }
-
-    function set_dbs_list()
-    {
-        $db_list = \db\mongo()->admin->command(array('listDatabases' => 1));
-        $db_list = array_map(function ($i) { return $i['name']; }, $db_list['databases']);
-        \globals\vars('db_list', $db_list);
-    }
-
-    function change_db()
-    {
-        if (isset($_GET['db'])) {
-            \db\mongo($_GET['db']);
-            \globals\vars('db', $_GET['db']);
-            \globals\vars('collections', array_map(function ($i) { return preg_replace('/^(.*)\./', '', $i); }, \db\mongo()->listCollections()));
-        }
-    }
-
-    function find()
-    {
-        if (isset($_GET['collection'])) {
-            $collection = \globals\vars('collection', $_GET['collection']);
-            $find = array();
-
-            if (isset($_GET['find']) && \strlen($_GET['find']) > 0) {
-                $find = json_decode(str_replace("'", '"', $_GET['find']));
-                if (!$find) {
-                    $find = array();
-                    \globals\vars('find_error', 'Error in query!');
-                }
-
+        if (isset($_GET['find']) && \strlen($_GET['find']) > 0) {
+            $find = json_decode(str_replace("'", '"', $_GET['find']));
+            if (!$find) {
+                $find = array();
+                global_vars('find_error', 'Error in query!');
             }
 
-            if (!\globals\vars('find_error')) {
-                $page = \page\params(\db\mongo()->$collection->find($find)->count());
-                \globals\vars('pagination', \page\pagination($page['pages'], $page['current']));
-                \globals\vars('find', \db\mongo()->$collection->find($find)->sort(array('_id' => -1))->skip($page['skip'])->limit($page['limit']));
-            }
+        }
+
+        if (!global_vars('find_error')) {
+            $page = page_params(mongo()->$collection->find($find)->count());
+            global_vars('pagination', pagination($page['pages'], $page['current']));
+            global_vars('find',
+                mongo()->$collection
+                    ->find($find)
+                    ->sort(array('_id' => -1))
+                    ->skip($page['skip'])
+                    ->limit($page['limit']));
         }
     }
-
-    function run()
-    {
-        init();
-        set_dbs_list();
-        change_db();
-        find();
-    }
-
-    run();
 }
 
-namespace template { ?>
+set_dbs_list();
+change_db();
+find();
+
+?>
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -196,9 +177,9 @@ namespace template { ?>
             outline: 5px auto -webkit-focus-ring-color;
             outline-offset: -2px
         }
-        #container { 
+        #container {
             min-width: 300px;
-            width: 900px; 
+            width: 900px;
             margin: 60px 0 0 50px;
         }
         .pages {
@@ -262,37 +243,38 @@ namespace template { ?>
             <span class="dbs">
                 DB
                 <select id="db-list" name="db">
-                <?php foreach (\globals\vars('db_list') as $db): ?>
+                <?php foreach (global_vars('db_list') as $db): ?>
                     <option value="<?= $db ?>" <?= isset($_GET['db']) && $db == $_GET['db'] ? 'selected="selected"':'' ?>><?= $db ?></option>
                 <?php endforeach ?>
                 </select>
             </span>
             <span class="collections">
-            <?php if (\globals\vars('collections')): ?>
+            <?php if (global_vars('collections')): ?>
                 Collection
                 <select id="collections">
                     <option></option>
-                <?php foreach (\globals\vars('collections') as $collection): ?>
-                    <option <?= isset($_GET['collection']) && $_GET['collection'] == $collection ? 'selected':'' ?> href="<?= \utils\query('collection', $collection) ?>"><?= $collection ?></option>
-                <?php endforeach ?>
+                    <?php foreach (global_vars('collections') as $collection): ?>
+                    <option <?= isset($_GET['collection']) && $_GET['collection'] == $collection ? 'selected':'' ?>>
+                        <?= $collection ?>
+                    </option>
+                    <?php endforeach ?>
                 </select>
             <?php endif ?>
             </span>
-            <?php if ($pagination = \globals\vars('pagination')): ?>
+            <?php if ($pagination = global_vars('pagination')): ?>
                 <span class="pages">
-                    Page
-                    <?= $pagination ?>
+                    Page <?= $pagination ?>
                 </span>
             <?php endif ?>
         </div>
         <div class="form-error">
-            <?php if (\globals\vars('collection')): ?>
+            <?php if (global_vars('collection')): ?>
             <form>
-                <?php if (\globals\vars('find_error')): ?>
-                <span class="error"><?= \globals\vars('find_error') ?></span>
+                <?php if (global_vars('find_error')): ?>
+                <span class="error"><?= global_vars('find_error') ?></span>
                 <?php endif ?>
-                <input type="hidden" name="db" value="<?= \globals\vars('db') ?>" />
-                <input type="hidden" name="collection" value="<?= \globals\vars('collection') ?>" />
+                <input type="hidden" name="db" value="<?= global_vars('db') ?>" />
+                <input type="hidden" name="collection" value="<?= global_vars('collection') ?>" />
                 <input type="text" class="query" placeholder='{"userId": 1}' name="find" value='<?= isset($_GET['find']) ? str_replace("'", '"', $_GET['find']):'' ?>' />
             </form>
         <?php endif ?>
@@ -300,10 +282,10 @@ namespace template { ?>
         <div style="clear: both"></div>
     </div>
     <div id="container">
-        
+
         <div>
-        <?php if (\globals\vars('find')): ?>
-            <?php foreach (\globals\vars('find') as $f): ?>
+        <?php if (global_vars('find')): ?>
+            <?php foreach (global_vars('find') as $f): ?>
                 <pre><?= json_encode($f, JSON_PRETTY_PRINT) ?></pre>
             <?php endforeach ?>
         <?php endif ?>
@@ -312,11 +294,12 @@ namespace template { ?>
     <script>
         (function () {
             document.getElementById('db-list').onchange = function () {
+                console.log('1');
                 document.location = '?db=' + this.options[this.selectedIndex].value;
             };
 
             document.getElementById('collections').onchange = function () {
-                var collection = this.options[this.selectedIndex],
+                var collection = this.options[this.selectedIndex].value,
                     d = document.getElementById('db-list'),
                     db = d.options[d.selectedIndex].value;
 
@@ -336,4 +319,3 @@ namespace template { ?>
     </script>
   </body>
 </html>
-<?php } ?>
