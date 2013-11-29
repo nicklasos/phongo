@@ -43,7 +43,7 @@ function query($param = '', $change = '')
 
 function global_vars($name, $value = null)
 {
-    static $vars = array();
+    static $vars = [];
     if ($value) $vars[$name] = $value;
     return isset($vars[$name]) ? $vars[$name] : null;
 }
@@ -102,8 +102,16 @@ function pagination($pages, $current)
 
 function set_dbs_list()
 {
-    $db_list = mongo()->admin->command(array('listDatabases' => 1));
-    $db_list = array_map(function ($i) { return $i['name']; }, $db_list['databases']);
+    $db_list = mongo()->admin->command(['listDatabases' => 1]);
+
+    $db_list = array_map(
+        function ($i)
+        {
+            return $i['name'];
+        },
+        $db_list['databases']
+    );
+
     global_vars('db_list', $db_list);
 }
 
@@ -112,7 +120,16 @@ function change_db()
     if (isset($_GET['db'])) {
         mongo($_GET['db']);
         global_vars('db', $_GET['db']);
-        global_vars('collections', array_map(function ($i) { return preg_replace('/^(.*)\./', '', $i); }, mongo()->listCollections()));
+        global_vars(
+            'collections',
+            array_map(
+                function ($i)
+                {
+                    return preg_replace('/^(.*)\./', '', $i);
+                },
+                mongo()->listCollections()
+            )
+        );
     }
 }
 
@@ -120,12 +137,12 @@ function find()
 {
     if (isset($_GET['collection'])) {
         $collection = global_vars('collection', $_GET['collection']);
-        $find = array();
+        $find = [];
 
         if (isset($_GET['find']) && \strlen($_GET['find']) > 0) {
             $find = json_decode(str_replace("'", '"', $_GET['find']));
             if (!$find) {
-                $find = array();
+                $find = [];
                 global_vars('find_error', 'Error in query!');
             }
 
@@ -134,12 +151,15 @@ function find()
         if (!global_vars('find_error')) {
             $page = page_params(mongo()->$collection->find($find)->count());
             global_vars('pagination', pagination($page['pages'], $page['current']));
-            global_vars('find',
-                mongo()->$collection
+            global_vars(
+                'find',
+                mongo()
+                    ->$collection
                     ->find($find)
-                    ->sort(array('_id' => -1))
+                    ->sort(['_id' => -1])
                     ->skip($page['skip'])
-                    ->limit($page['limit']));
+                    ->limit($page['limit'])
+            );
         }
     }
 }
