@@ -323,7 +323,7 @@ find();
                     d = document.getElementById('db-list'),
                     db = d.options[d.selectedIndex].value;
 
-                document.location = '?db=' + db + '&collection=' + collection;
+                document.location = '?db=' + db + (collection ? '&collection=' + collection : '');
             };
 
             document.getElementById('pagination').onchange = function () {
