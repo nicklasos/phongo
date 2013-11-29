@@ -156,7 +156,7 @@ function find()
                 mongo()
                     ->$collection
                     ->find($find)
-                    ->sort(['_id' => 1])
+                    ->sort(['_id' => -1])
                     ->skip($page['skip'])
                     ->limit($page['limit'])
             );
