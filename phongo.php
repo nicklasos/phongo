@@ -89,7 +89,7 @@ function pagination($pages, $current)
     if ($pages > 1) {
         $html = '<select id="pagination">';
 
-        for ($p = 1; $p <= $pages + 1; $p++) {
+        for ($p = 1; $p <= $pages; $p++) {
             $selected = $current == $p ? 'selected="selected"' : '';
             $html .= "<option {$selected}>{$p}</li>";
         }
