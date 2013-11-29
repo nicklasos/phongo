@@ -95,16 +95,14 @@ namespace page
         $html = '';
 
         if ($pages > 1) {
-            $html = '<ul class="pagination">';
-          
-            for ($p = 1; $p <= $pages; $p++) {
-                $class = $current == $p ? 'active':'';
-                $query = \utils\query('page', $p);
+            $html = '<select id="pagination">';
 
-                $html .= "<li class='{$class}'><a href='{$query}'>{$p}</a></li>";
+            for ($p = 1; $p <= $pages; $p++) {
+                $selected = $current == $p ? 'selected="selected"' : '';
+                $html .= "<option {$selected}>{$p}</li>";
             }
 
-            $html .= '</ul>';
+            $html .= '</select>';
         }
 
         return $html;
@@ -203,25 +201,8 @@ namespace template { ?>
             width: 900px; 
             margin: 60px 0 0 50px;
         }
-        .pagination {
-            font-weight: bold;
-            display: inline-block;
-            padding-left: 0;
-        }
-        .pagination>li {
-            display: inline;
-        }
-        .pagination>li>a {
-            padding: 3px 6px;
-            margin-left: -1px;
-            text-decoration: none;
-            background-color: #fff;
-            border: 1px solid #ddd
-        }
-        .pagination>li.active>a {
-            background-color: gray;
-            border: 1px solid gray;
-            color: #fff
+        .pages {
+            margin-left: 20px;
         }
         .collections>a {
             padding: 3px 6px;
@@ -253,6 +234,9 @@ namespace template { ?>
         .error {
             font-weight: bold;
             color: #d44950
+        }
+        .form-error {
+            float: right; padding-right: 30px;
         }
         #header {
             font-weight: bold;
@@ -294,8 +278,14 @@ namespace template { ?>
                 </select>
             <?php endif ?>
             </span>
+            <?php if ($pagination = \globals\vars('pagination')): ?>
+                <span class="pages">
+                    Page
+                    <?= $pagination ?>
+                </span>
+            <?php endif ?>
         </div>
-        <div style="float: right; padding-right: 30px">
+        <div class="form-error">
             <?php if (\globals\vars('collection')): ?>
             <form>
                 <?php if (\globals\vars('find_error')): ?>
@@ -313,7 +303,6 @@ namespace template { ?>
         
         <div>
         <?php if (\globals\vars('find')): ?>
-            <?= \globals\vars('pagination') ?>
             <?php foreach (\globals\vars('find') as $f): ?>
                 <pre><?= json_encode($f, JSON_PRETTY_PRINT) ?></pre>
             <?php endforeach ?>
@@ -327,7 +316,21 @@ namespace template { ?>
             };
 
             document.getElementById('collections').onchange = function () {
-                document.location = '?db=' + document.getElementById('db-list').options[document.getElementById('db-list').selectedIndex].value + '&collection=' + this.options[this.selectedIndex].value;
+                var collection = this.options[this.selectedIndex],
+                    d = document.getElementById('db-list'),
+                    db = d.options[d.selectedIndex].value;
+
+                document.location = '?db=' + db + '&collection=' + collection;
+            };
+
+            document.getElementById('pagination').onchange = function () {
+                var page = this.options[this.selectedIndex].value,
+                    d = document.getElementById('db-list'),
+                    db = d.options[d.selectedIndex].value,
+                    c = document.getElementById('collections'),
+                    collection = c.options[c.selectedIndex].value;
+
+                document.location = '?db=' + db+ '&collection=' + collection + '&page=' + page;
             };
         }());
     </script>
