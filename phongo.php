@@ -64,7 +64,7 @@ function current_page()
 
 function page_params($count)
 {
-    $limit = 2;
+    $limit = 100;
     $page = current_page();
     $skip = $limit * ($page - 1);
 
