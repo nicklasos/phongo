@@ -64,7 +64,7 @@ function current_page()
 
 function page_params($count)
 {
-    $limit = 100;
+    $limit = 2;
     $page = current_page();
     $skip = $limit * ($page - 1);
 
@@ -89,7 +89,7 @@ function pagination($pages, $current)
     if ($pages > 1) {
         $html = '<select id="pagination">';
 
-        for ($p = 1; $p <= $pages; $p++) {
+        for ($p = 1; $p <= ($pages + 1); $p++) {
             $selected = $current == $p ? 'selected="selected"' : '';
             $html .= "<option {$selected}>{$p}</li>";
         }
@@ -156,7 +156,7 @@ function find()
                 mongo()
                     ->$collection
                     ->find($find)
-                    ->sort(['_id' => -1])
+                    ->sort(['_id' => 1])
                     ->skip($page['skip'])
                     ->limit($page['limit'])
             );
