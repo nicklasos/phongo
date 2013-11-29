@@ -72,7 +72,7 @@ namespace page
 
     function params($count)
     {
-        $limit = 30;
+        $limit = 100;
         $page = current();
         $skip = $limit * ($page - 1);
 
@@ -317,7 +317,6 @@ namespace template { ?>
             <?php foreach (\globals\vars('find') as $f): ?>
                 <pre><?= json_encode($f, JSON_PRETTY_PRINT) ?></pre>
             <?php endforeach ?>
-            <?= \globals\vars('pagination') ?>
         <?php endif ?>
         </div>
     </div>
