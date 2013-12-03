@@ -1,8 +1,5 @@
 <?php
 
-error_reporting(E_ALL);
-ini_set('error_reporting', E_ALL);
-
 function mongo($db = null)
 {
     static $mongo;
@@ -25,23 +22,7 @@ function wtf($what)
     echo '</pre>';
 }
 
-function query($param = '', $change = '')
-{
-    $get_params = $_GET;
-
-    if ($param != 'page') {
-        unset($get_params['page']);
-        unset($get_params['find']);
-    }
-
-    if ($param && $change) {
-        $get_params[$param] = $change;
-    }
-
-    return urldecode('?' . http_build_query($get_params));
-}
-
-function global_vars($name, $value = null)
+function vars($name, $value = null)
 {
     static $vars = [];
     if ($value) $vars[$name] = $value;
@@ -64,7 +45,7 @@ function current_page()
 
 function page_params($count)
 {
-    $limit = 100;
+    $limit = 5;
     $page = current_page();
     $skip = $limit * ($page - 1);
 
@@ -112,15 +93,15 @@ function set_dbs_list()
         $db_list['databases']
     );
 
-    global_vars('db_list', $db_list);
+    vars('db_list', $db_list);
 }
 
 function change_db()
 {
     if (isset($_GET['db'])) {
         mongo($_GET['db']);
-        global_vars('db', $_GET['db']);
-        global_vars(
+        vars('db', $_GET['db']);
+        vars(
             'collections',
             array_map(
                 function ($i)
@@ -136,22 +117,21 @@ function change_db()
 function find()
 {
     if (isset($_GET['collection'])) {
-        $collection = global_vars('collection', $_GET['collection']);
+        $collection = vars('collection', $_GET['collection']);
         $find = [];
 
-        if (isset($_GET['find']) && strlen($_GET['find']) > 0) {
+        if (isset($_GET['find']) && \strlen($_GET['find']) > 0) {
             $find = json_decode(str_replace("'", '"', $_GET['find']));
             if (!$find) {
-                $find = [];
-                global_vars('find_error', 'Error in query!');
+                vars('find_error', 'Error in query!');
             }
 
         }
 
-        if (!global_vars('find_error')) {
+        if (!vars('find_error')) {
             $page = page_params(mongo()->$collection->find($find)->count());
-            global_vars('pagination', pagination($page['pages'], $page['current']));
-            global_vars(
+            vars('pagination', pagination($page['pages'], $page['current']));
+            vars(
                 'find',
                 mongo()
                     ->$collection
@@ -263,17 +243,17 @@ find();
             <span class="dbs">
                 DB
                 <select id="db-list" name="db">
-                <?php foreach (global_vars('db_list') as $db): ?>
+                <?php foreach (vars('db_list') as $db): ?>
                     <option value="<?= $db ?>" <?= isset($_GET['db']) && $db == $_GET['db'] ? 'selected="selected"':'' ?>><?= $db ?></option>
                 <?php endforeach ?>
                 </select>
             </span>
             <span class="collections">
-            <?php if (global_vars('collections')): ?>
+            <?php if (vars('collections')): ?>
                 Collection
                 <select id="collections">
                     <option></option>
-                    <?php foreach (global_vars('collections') as $collection): ?>
+                    <?php foreach (vars('collections') as $collection): ?>
                     <option <?= isset($_GET['collection']) && $_GET['collection'] == $collection ? 'selected':'' ?>>
                         <?= $collection ?>
                     </option>
@@ -281,20 +261,20 @@ find();
                 </select>
             <?php endif ?>
             </span>
-            <?php if ($pagination = global_vars('pagination')): ?>
+            <?php if ($pagination = vars('pagination')): ?>
                 <span class="pages">
                     Page <?= $pagination ?>
                 </span>
             <?php endif ?>
         </div>
         <div class="form-error">
-            <?php if (global_vars('collection')): ?>
+            <?php if (vars('collection')): ?>
             <form>
-                <?php if (global_vars('find_error')): ?>
-                <span class="error"><?= global_vars('find_error') ?></span>
+                <?php if (vars('find_error')): ?>
+                <span class="error"><?= vars('find_error') ?></span>
                 <?php endif ?>
-                <input type="hidden" name="db" value="<?= global_vars('db') ?>" />
-                <input type="hidden" name="collection" value="<?= global_vars('collection') ?>" />
+                <input type="hidden" name="db" value="<?= vars('db') ?>" />
+                <input type="hidden" name="collection" value="<?= vars('collection') ?>" />
                 <input type="text" class="query" placeholder='{"userId": 1}' name="find" value='<?= isset($_GET['find']) ? str_replace("'", '"', $_GET['find']):'' ?>' />
             </form>
         <?php endif ?>
@@ -304,8 +284,8 @@ find();
     <div id="container">
 
         <div>
-        <?php if (global_vars('find')): ?>
-            <?php foreach (global_vars('find') as $f): ?>
+        <?php if (vars('find')): ?>
+            <?php foreach (vars('find') as $f): ?>
                 <pre><?= json_encode($f, JSON_PRETTY_PRINT) ?></pre>
             <?php endforeach ?>
         <?php endif ?>
