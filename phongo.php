@@ -139,7 +139,7 @@ function find()
         $collection = global_vars('collection', $_GET['collection']);
         $find = [];
 
-        if (isset($_GET['find']) && \strlen($_GET['find']) > 0) {
+        if (isset($_GET['find']) && strlen($_GET['find']) > 0) {
             $find = json_decode(str_replace("'", '"', $_GET['find']));
             if (!$find) {
                 $find = [];
