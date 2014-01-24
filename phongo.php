@@ -276,7 +276,7 @@ find();
                 <?php endif ?>
                 <input type="hidden" name="db" value="<?= vars('db') ?>" />
                 <input type="hidden" name="collection" value="<?= vars('collection') ?>" />
-                <input type="text" class="query" placeholder='{"userId": 1}' name="find" value='<?= isset($_GET['find']) ? str_replace("'", '"', $_GET['find']):'' ?>' />
+                <input type="text" id="find" class="query" placeholder='{"userId": 1}' name="find" value='<?= isset($_GET['find']) ? str_replace("'", '"', $_GET['find']):'' ?>' />
             </form>
         <?php endif ?>
         </div>
@@ -312,9 +312,10 @@ find();
                     d = document.getElementById('db-list'),
                     db = d.options[d.selectedIndex].value,
                     c = document.getElementById('collections'),
-                    collection = c.options[c.selectedIndex].value;
+                    collection = c.options[c.selectedIndex].value,
+                    f = document.getElementById('find').value;
 
-                document.location = '?db=' + db+ '&collection=' + collection + '&page=' + page;
+                document.location = '?db=' + db+ '&collection=' + collection + '&page=' + page + '&find=' + find;
             };
         }());
     </script>
