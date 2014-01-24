@@ -210,7 +210,7 @@ find();
             font-size: 15px;
             border-radius: 0px;
             border-bottom: 1px solid #3f3f3f;
-            width: 300px;
+            width: 400px;
             padding-left: 5px;
         }
         .error {
