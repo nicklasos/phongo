@@ -25,7 +25,11 @@ function wtf($what)
 function vars($name, $value = null)
 {
     static $vars = [];
-    if ($value) $vars[$name] = $value;
+
+    if ($value) {
+        $vars[$name] = $value;
+    }
+
     return isset($vars[$name]) ? $vars[$name] : null;
 }
 
@@ -85,9 +89,9 @@ function set_dbs_list()
 {
     $db_list = mongo()->admin->command(['listDatabases' => 1]);
 
+    // Why not array_column? Because fuck you, that's why!
     $db_list = array_map(
-        function ($i)
-        {
+        function ($i) {
             return $i['name'];
         },
         $db_list['databases']
@@ -104,8 +108,7 @@ function change_db()
         vars(
             'collections',
             array_map(
-                function ($i)
-                {
+                function ($i) {
                     return preg_replace('/^(.*)\./', '', $i);
                 },
                 mongo()->listCollections()
@@ -120,7 +123,7 @@ function find()
         $collection = vars('collection', $_GET['collection']);
         $find = [];
 
-        if (isset($_GET['find']) && \strlen($_GET['find']) > 0) {
+        if (isset($_GET['find']) && strlen($_GET['find']) > 0) {
             $find = json_decode(str_replace("'", '"', $_GET['find']));
             if (!$find) {
                 vars('find_error', 'Error in query!');
@@ -151,7 +154,7 @@ find();
 ?>
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Lite MongoDB explorer">
@@ -210,7 +213,7 @@ find();
             font-size: 15px;
             border-radius: 0px;
             border-bottom: 1px solid #3f3f3f;
-            width: 400px;
+            width: 300px;
             padding-left: 5px;
         }
         .error {
@@ -236,17 +239,17 @@ find();
             margin-right: 30px;
         }
     </style>
-  </head>
-  <body>
-    <div id="header">
-        <div style="float: left">
-            <span class="logo">Phongo</span>
+</head>
+<body>
+<div id="header">
+    <div style="float: left">
+        <span class="logo">Phongo</span>
             <span class="dbs">
                 DB
                 <select id="db-list" name="db">
-                <?php foreach (vars('db_list') as $db): ?>
-                    <option value="<?= $db ?>" <?= isset($_GET['db']) && $db == $_GET['db'] ? 'selected="selected"':'' ?>><?= $db ?></option>
-                <?php endforeach ?>
+                    <?php foreach (vars('db_list') as $db): ?>
+                        <option value="<?= $db ?>" <?= isset($_GET['db']) && $db == $_GET['db'] ? 'selected="selected"':'' ?>><?= $db ?></option>
+                    <?php endforeach ?>
                 </select>
             </span>
             <span class="collections">
@@ -255,69 +258,69 @@ find();
                 <select id="collections">
                     <option></option>
                     <?php foreach (vars('collections') as $collection): ?>
-                    <option <?= isset($_GET['collection']) && $_GET['collection'] == $collection ? 'selected':'' ?>>
-                        <?= $collection ?>
-                    </option>
+                        <option <?= isset($_GET['collection']) && $_GET['collection'] == $collection ? 'selected':'' ?>>
+                            <?= $collection ?>
+                        </option>
                     <?php endforeach ?>
                 </select>
             <?php endif ?>
             </span>
-            <?php if ($pagination = vars('pagination')): ?>
-                <span class="pages">
+        <?php if ($pagination = vars('pagination')): ?>
+            <span class="pages">
                     Page <?= $pagination ?>
                 </span>
-            <?php endif ?>
-        </div>
-        <div class="form-error">
-            <?php if (vars('collection')): ?>
+        <?php endif ?>
+    </div>
+    <div class="form-error">
+        <?php if (vars('collection')): ?>
             <form>
                 <?php if (vars('find_error')): ?>
-                <span class="error"><?= vars('find_error') ?></span>
+                    <span class="error"><?= vars('find_error') ?></span>
                 <?php endif ?>
                 <input type="hidden" name="db" value="<?= vars('db') ?>" />
                 <input type="hidden" name="collection" value="<?= vars('collection') ?>" />
                 <input type="text" id="find" class="query" placeholder='{"userId": 1}' name="find" value='<?= isset($_GET['find']) ? str_replace("'", '"', $_GET['find']):'' ?>' />
             </form>
         <?php endif ?>
-        </div>
-        <div style="clear: both"></div>
     </div>
-    <div id="container">
+    <div style="clear: both"></div>
+</div>
+<div id="container">
 
-        <div>
+    <div>
         <?php if (vars('find')): ?>
             <?php foreach (vars('find') as $f): ?>
                 <pre><?= json_encode($f, JSON_PRETTY_PRINT) ?></pre>
             <?php endforeach ?>
         <?php endif ?>
-        </div>
     </div>
-    <script>
-        (function () {
-            document.getElementById('db-list').onchange = function () {
-                console.log('1');
-                document.location = '?db=' + this.options[this.selectedIndex].value;
-            };
+</div>
+<script>
+    (function () {
+        document.getElementById('db-list').onchange = function () {
+            console.log('1');
+            document.location = '?db=' + this.options[this.selectedIndex].value;
+        };
 
-            document.getElementById('collections').onchange = function () {
-                var collection = this.options[this.selectedIndex].value,
-                    d = document.getElementById('db-list'),
-                    db = d.options[d.selectedIndex].value;
+        document.getElementById('collections').onchange = function () {
+            var collection = this.options[this.selectedIndex].value,
+                d = document.getElementById('db-list'),
+                db = d.options[d.selectedIndex].value;
 
-                document.location = '?db=' + db + (collection ? '&collection=' + collection : '');
-            };
+            document.location = '?db=' + db + (collection ? '&collection=' + collection : '');
+        };
 
-            document.getElementById('pagination').onchange = function () {
-                var page = this.options[this.selectedIndex].value,
-                    d = document.getElementById('db-list'),
-                    db = d.options[d.selectedIndex].value,
-                    c = document.getElementById('collections'),
-                    collection = c.options[c.selectedIndex].value,
-                    f = document.getElementById('find').value;
+        document.getElementById('pagination').onchange = function () {
+            var page = this.options[this.selectedIndex].value,
+                d = document.getElementById('db-list'),
+                db = d.options[d.selectedIndex].value,
+                c = document.getElementById('collections'),
+                collection = c.options[c.selectedIndex].value,
+                f = document.getElementById('find').value;
 
-                document.location = '?db=' + db+ '&collection=' + collection + '&page=' + page + '&find=' + find;
-            };
-        }());
-    </script>
-  </body>
+            document.location = '?db=' + db+ '&collection=' + collection + '&page=' + page + '&find=' + f;
+        };
+    }());
+</script>
+</body>
 </html>
