@@ -132,14 +132,14 @@ function find()
         }
 
         if (!vars('find_error')) {
-            $count = mongo()->selectCollection($collection)->count();
+            $count = mongo()->selectCollection($collection)->count($find);
             $page = page_params($count);
             vars('item_count', $count);
             vars('pagination', pagination($page['pages'], $page['current']));
             vars(
                 'find',
                 mongo()
-                    ->$collection
+                    ->selectCollection($collection)
                     ->find($find)
                     ->sort(['_id' => -1])
                     ->skip($page['skip'])
