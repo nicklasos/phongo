@@ -132,7 +132,9 @@ function find()
         }
 
         if (!vars('find_error')) {
-            $page = page_params(mongo()->$collection->find($find)->count());
+            $count = mongo()->selectCollection($collection)->count();
+            $page = page_params($count);
+            vars('item_count', $count);
             vars('pagination', pagination($page['pages'], $page['current']));
             vars(
                 'find',
@@ -238,6 +240,9 @@ find();
             font-weight: bold;
             margin-right: 30px;
         }
+        .items-count {
+            margin-left: 20px;
+        }
     </style>
 </head>
 <body>
@@ -267,9 +272,12 @@ find();
             </span>
         <?php if ($pagination = vars('pagination')): ?>
             <span class="pages">
-                    Page <?= $pagination ?>
-                </span>
+                Page <?= $pagination ?>
+            </span>
         <?php endif ?>
+        <span class="items-count">
+            Items: <?= vars('item_count') ?>
+        </span>
     </div>
     <div class="form-error">
         <?php if (vars('collection')): ?>
