@@ -49,7 +49,7 @@ function current_page()
 
 function page_params($count)
 {
-    $limit = 5;
+    $limit = 50;
     $page = current_page();
     $skip = $limit * ($page - 1);
 
@@ -72,6 +72,7 @@ function pagination($pages, $current)
     $html = '';
 
     if ($pages > 1) {
+        /*
         $html = '<select id="pagination">';
 
         for ($p = 1; $p <= $pages; $p++) {
@@ -80,6 +81,9 @@ function pagination($pages, $current)
         }
 
         $html .= '</select>';
+        */
+
+        $html .= "<input type='number' id='page' class='page' min='0' name='page' value='{$current}' /> / " . vars('pages_count');
     }
 
     return $html;
@@ -134,20 +138,39 @@ function find()
         if (!vars('find_error')) {
             $count = mongo()->selectCollection($collection)->count($find);
             $page = page_params($count);
+
+
+            $query = mongo()
+                ->selectCollection($collection)
+                ->find($find)
+                ->sort(['_id' => -1])
+                ->skip($page['skip'])
+                ->limit($page['limit']);
+
+            $result = [];
+
+            $i = 0;
+            foreach ($query as $q) {
+                $result[$i] = $q;
+                if (isset($q['parameters']['timestamp'])) {
+                    $result[$i]['t'] = date('d.m.Y H:i:s', $q['parameters']['timestamp']);
+                }
+                $i++;
+            }
+
             vars('item_count', $count);
+            vars('pages_count', $page['pages']);
             vars('pagination', pagination($page['pages'], $page['current']));
             vars(
                 'find',
-                mongo()
-                    ->selectCollection($collection)
-                    ->find($find)
-                    ->sort(['_id' => -1])
-                    ->skip($page['skip'])
-                    ->limit($page['limit'])
+                $result
             );
         }
     }
 }
+
+error_reporting(E_ALL);
+ini_set('error_reporting', E_ALL);
 
 set_dbs_list();
 change_db();
@@ -207,7 +230,7 @@ find();
             border: none;
             height: 22px
         }
-        input.query {
+        input.query, input.page {
             background: #131313;
             border: 0;
             height: 23px;
@@ -215,8 +238,13 @@ find();
             font-size: 15px;
             border-radius: 0px;
             border-bottom: 1px solid #3f3f3f;
-            width: 300px;
+            width: 270px;
             padding-left: 5px;
+        }
+        input.page {
+            width: 60px;
+            text-align: right;
+            padding-right: 5px;
         }
         .error {
             font-weight: bold;
@@ -228,7 +256,7 @@ find();
         #header {
             font-weight: bold;
             background-color: #222222;
-            min-width: 670px;
+            min-width: 1024px;
             width: 100%;
             top: 0;
             position: fixed;
@@ -275,9 +303,11 @@ find();
                 Page <?= $pagination ?>
             </span>
         <?php endif ?>
+        <?php if (vars('item_count')): ?>
         <span class="items-count">
             Items: <?= vars('item_count') ?>
         </span>
+        <?php endif ?>
     </div>
     <div class="form-error">
         <?php if (vars('collection')): ?>
@@ -318,16 +348,20 @@ find();
             document.location = '?db=' + db + (collection ? '&collection=' + collection : '');
         };
 
-        document.getElementById('pagination').onchange = function () {
-            var page = this.options[this.selectedIndex].value,
-                d = document.getElementById('db-list'),
-                db = d.options[d.selectedIndex].value,
-                c = document.getElementById('collections'),
-                collection = c.options[c.selectedIndex].value,
-                f = document.getElementById('find').value;
+        document.getElementById('page').onkeypress = function (e){
+            if (!e) e = window.event;
+            var keyCode = e.keyCode || e.which;
+            if (keyCode == '13'){
+                var page = document.getElementById('page').value,
+                    d = document.getElementById('db-list'),
+                    db = d.options[d.selectedIndex].value,
+                    c = document.getElementById('collections'),
+                    collection = c.options[c.selectedIndex].value,
+                    f = document.getElementById('find').value;
 
-            document.location = '?db=' + db+ '&collection=' + collection + '&page=' + page + '&find=' + f;
-        };
+                document.location = '?db=' + db+ '&collection=' + collection + '&page=' + page + '&find=' + f;
+            }
+        }
     }());
 </script>
 </body>
