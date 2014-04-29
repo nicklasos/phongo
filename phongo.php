@@ -128,7 +128,7 @@ function find()
         $find = [];
 
         if (isset($_GET['find']) && strlen($_GET['find']) > 0) {
-            $find = json_decode(str_replace("'", '"', $_GET['find']));
+            $find = json_decode(str_replace("'", '"', $_GET['find']), true);
             if (!$find || !is_array($find)) {
                 vars('find_error', 'Error in query!');
             }
