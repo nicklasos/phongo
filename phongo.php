@@ -82,8 +82,8 @@ function pagination($pages, $current)
 
         $html .= '</select>';
         */
-
-        $html .= "<input type='number' id='page' class='page' min='0' name='page' value='{$current}' /> / " . vars('pages_count');
+        $max = vars('pages_count');
+        $html .= "<input type='number' id='page' class='page' min='0' max='{$max}' name='page' value='{$current}' /> / " . vars('pages_count');
     }
 
     return $html;
@@ -129,7 +129,7 @@ function find()
 
         if (isset($_GET['find']) && strlen($_GET['find']) > 0) {
             $find = json_decode(str_replace("'", '"', $_GET['find']));
-            if (!$find) {
+            if (!$find || !is_array($find)) {
                 vars('find_error', 'Error in query!');
             }
 
@@ -169,12 +169,20 @@ function find()
     }
 }
 
+function indexes()
+{
+    if (vars('collection')) {
+        vars('indexes', mongo()->selectCollection(vars('collection'))->getIndexInfo());
+    }
+}
+
 error_reporting(E_ALL);
 ini_set('error_reporting', E_ALL);
 
 set_dbs_list();
 change_db();
 find();
+indexes();
 
 ?>
 <!DOCTYPE html>
@@ -263,6 +271,7 @@ find();
             color: white;
             padding: 10px;
             border-bottom: 1px solid gray;
+            z-index: 10;
         }
         .logo {
             font-weight: bold;
@@ -270,6 +279,25 @@ find();
         }
         .items-count {
             margin-left: 20px;
+        }
+        #panel {
+            right: 20px;
+            position: absolute;
+            border-radius: 5px;
+            background-color: lightgoldenrodyellow;
+            padding: 8px;
+        }
+        .title {
+            font-weight: bold;
+        }
+        #db-list {
+            width: 100px;
+        }
+        #collections {
+            width: 110px;
+        }
+        #items-count {
+
         }
     </style>
 </head>
@@ -303,11 +331,6 @@ find();
                 Page <?= $pagination ?>
             </span>
         <?php endif ?>
-        <?php if (vars('item_count')): ?>
-        <span class="items-count">
-            Items: <?= vars('item_count') ?>
-        </span>
-        <?php endif ?>
     </div>
     <div class="form-error">
         <?php if (vars('collection')): ?>
@@ -324,7 +347,21 @@ find();
     <div style="clear: both"></div>
 </div>
 <div id="container">
-
+    <div id="panel">
+        <?php if (vars('item_count')): ?>
+            <div id="items-count">
+                <b>Items:</b> <?= vars('item_count') ?>
+            </div>
+        <?php endif ?>
+        <?php if (vars('indexes')): ?>
+        <div class="title">Indexes</div>
+        <?php foreach (vars('indexes') as $index): ?>
+            <?php foreach ($index['key'] as $name => $key): ?>
+                <?= $name ?><br />
+            <?php endforeach ?>
+        <?php endforeach ?>
+        <?php endif ?>
+    </div>
     <div>
         <?php if (vars('find')): ?>
             <?php foreach (vars('find') as $f): ?>
