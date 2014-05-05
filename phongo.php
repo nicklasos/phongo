@@ -176,8 +176,8 @@ function indexes()
     }
 }
 
-error_reporting(E_ALL);
-ini_set('error_reporting', E_ALL);
+error_reporting(0);
+ini_set('error_reporting', 0);
 
 set_dbs_list();
 change_db();
