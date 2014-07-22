@@ -72,16 +72,6 @@ function pagination($pages, $current)
     $html = '';
 
     if ($pages > 1) {
-        /*
-        $html = '<select id="pagination">';
-
-        for ($p = 1; $p <= $pages; $p++) {
-            $selected = $current == $p ? 'selected="selected"' : '';
-            $html .= "<option {$selected}>{$p}</li>";
-        }
-
-        $html .= '</select>';
-        */
         $max = vars('pages_count');
         $html .= "<input type='number' id='page' class='page' min='0' max='{$max}' name='page' value='{$current}' /> / " . vars('pages_count');
     }
@@ -147,23 +137,12 @@ function find()
                 ->skip($page['skip'])
                 ->limit($page['limit']);
 
-            $result = [];
-
-            $i = 0;
-            foreach ($query as $q) {
-                $result[$i] = $q;
-                if (isset($q['parameters']['timestamp'])) {
-                    $result[$i]['t'] = date('d.m.Y H:i:s', $q['parameters']['timestamp']);
-                }
-                $i++;
-            }
-
             vars('item_count', $count);
             vars('pages_count', $page['pages']);
             vars('pagination', pagination($page['pages'], $page['current']));
             vars(
                 'find',
-                $result
+                $query
             );
         }
     }
