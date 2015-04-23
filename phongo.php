@@ -5,7 +5,7 @@ function mongo($db = null)
     static $mongo;
 
     if (!isset($mongo)) {
-        $mongo = new Mongo;
+        $mongo = new MongoClient();
     }
 
     if ($db) {
@@ -63,7 +63,7 @@ function page_params($count)
         'current' => $page,
         'pages' => $pages,
         'limit' => $limit,
-        'skip' => $skip
+        'skip' => $skip,
     ];
 }
 
@@ -72,6 +72,16 @@ function pagination($pages, $current)
     $html = '';
 
     if ($pages > 1) {
+        /*
+        $html = '<select id="pagination">';
+
+        for ($p = 1; $p <= $pages; $p++) {
+            $selected = $current == $p ? 'selected="selected"' : '';
+            $html .= "<option {$selected}>{$p}</li>";
+        }
+
+        $html .= '</select>';
+        */
         $max = vars('pages_count');
         $html .= "<input type='number' id='page' class='page' min='0' max='{$max}' name='page' value='{$current}' /> / " . vars('pages_count');
     }
@@ -122,13 +132,11 @@ function find()
             if (!$find || !is_array($find)) {
                 vars('find_error', 'Error in query!');
             }
-
         }
 
         if (!vars('find_error')) {
             $count = mongo()->selectCollection($collection)->count($find);
             $page = page_params($count);
-
 
             $query = mongo()
                 ->selectCollection($collection)
@@ -137,12 +145,23 @@ function find()
                 ->skip($page['skip'])
                 ->limit($page['limit']);
 
+            $result = [];
+
+            $i = 0;
+            foreach ($query as $q) {
+                $result[$i] = $q;
+                if (isset($q['parameters']['timestamp'])) {
+                    $result[$i]['t'] = date('d.m.Y H:i:s', $q['parameters']['timestamp']);
+                }
+                $i++;
+            }
+
             vars('item_count', $count);
             vars('pages_count', $page['pages']);
             vars('pagination', pagination($page['pages'], $page['current']));
             vars(
                 'find',
-                $query
+                $result
             );
         }
     }
@@ -171,75 +190,92 @@ indexes();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Lite MongoDB explorer">
     <meta name="author" content="Nicklasos">
-    <link href="data:image/x-icon;base64,AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAtHt3jbR7d/+0e3f/tHt3/7R7d/+0e3f/tHt3vTSGG700hhv/NIYb/zSGG/80hhv/NIYb/zSGG4cAAAAAtHt3jbR7d/+0e3f/tHt3/7R7d/+0e3f/tHt3jbR7d700hhu9NIYbhzSGG/80hhv/NIYb/zSGG/80hhv/NIYbh7R7d/+0e3f/tHt3/7R7d/+0e3f/tHt3P7R7dz+0e3e9NIYbvTSGGzs0hhs7NIYb/zSGG/80hhv/NIYb/zSGG/+0e3f/tHt3/7R7d/+0e3f/tHt3P7R7dz+0e3c/tHt3vTSGG700hhs7NIYbOzSGGzs0hhv/NIYb/zSGG/80hhv/tHt3/7R7d/+0e3f/tHt3P7R7dz+0e3c/tHt3P7R7d700hhu9NIYbOzSGGzs0hhs7NIYbOzSGG/80hhv/NIYb/7R7d/+0e3f/tHt3/7R7dz+0e3c/tHt3P7R7dz+0e3e9NIYbvTSGGzs0hhs7NIYbOzSGGzs0hhv/NIYb/zSGG/+0e3f/tHt3/7R7d/+0e3eNtHt3P7R7dz+0e3c/tHt3vTSGG700hhs7NIYbOzSGGzs0hhuHNIYb/zSGG/80hhv/tHt3/7R7d/+0e3f/tHt3jbR7dz+0e3c/tHt3P7R7d700hhu9NIYbOzSGGzs0hhs7NIYbhzSGG/80hhv/NIYb/7R7d/+0e3f/tHt3/7R7d/+0e3c/tHt3P7R7dz+0e3e9NIYbvTSGGzs0hhs7NIYbOzSGG/80hhv/NIYb/zSGG/+0e3f/tHt3/7R7d/+0e3f/tHt3jbR7dz+0e3c/tHt3vTSGG700hhs7NIYbOzSGG4c0hhv/NIYb/zSGG/80hhv/tHt3/7R7d/+0e3f/tHt3/7R7d420e3c/tHt3P7R7d700hhu9NIYbOzSGGzs0hhuHNIYb/zSGG/80hhv/NIYb/7R7d/+0e3f/tHt3/7R7d/+0e3f/tHt3P7R7dz+0e3e9NIYbvTSGGzs0hhs7NIYb/zSGG/80hhv/NIYb/zSGG/+0e3f/tHt3/7R7d/+0e3f/tHt3/7R7d420e3c/tHt3vTSGG700hhs7NIYbhzSGG/80hhv/NIYb/zSGG/80hhv/tHt3/7R7d/+0e3f/tHt3/7R7d/+0e3f/tHt3P7R7d700hhu9NIYbOzSGG/80hhv/NIYb/zSGG/80hhv/NIYb/7R7d420e3f/tHt3/7R7d/+0e3f/tHt3/7R7d420e3e9NIYbvTSGG4c0hhv/NIYb/zSGG/80hhv/NIYb/zSGG4cAAAAAtHt3jbR7d/+0e3f/tHt3/7R7d/+0e3f/tHt3jTSGG4c0hhv/NIYb/zSGG/80hhv/NIYb/zSGG4cAAAAAgAEAAAAAAAAGYAAADnAAAB54AAAeeAAADnAAAA5wAAAOcAAABmAAAAZgAAAGYAAAAkAAAAJAAAAAAAAAgAEAAA==" rel="icon" type="image/x-icon" />
+    <link
+        href="data:image/x-icon;base64,AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAtHt3jbR7d/+0e3f/tHt3/7R7d/+0e3f/tHt3vTSGG700hhv/NIYb/zSGG/80hhv/NIYb/zSGG4cAAAAAtHt3jbR7d/+0e3f/tHt3/7R7d/+0e3f/tHt3jbR7d700hhu9NIYbhzSGG/80hhv/NIYb/zSGG/80hhv/NIYbh7R7d/+0e3f/tHt3/7R7d/+0e3f/tHt3P7R7dz+0e3e9NIYbvTSGGzs0hhs7NIYb/zSGG/80hhv/NIYb/zSGG/+0e3f/tHt3/7R7d/+0e3f/tHt3P7R7dz+0e3c/tHt3vTSGG700hhs7NIYbOzSGGzs0hhv/NIYb/zSGG/80hhv/tHt3/7R7d/+0e3f/tHt3P7R7dz+0e3c/tHt3P7R7d700hhu9NIYbOzSGGzs0hhs7NIYbOzSGG/80hhv/NIYb/7R7d/+0e3f/tHt3/7R7dz+0e3c/tHt3P7R7dz+0e3e9NIYbvTSGGzs0hhs7NIYbOzSGGzs0hhv/NIYb/zSGG/+0e3f/tHt3/7R7d/+0e3eNtHt3P7R7dz+0e3c/tHt3vTSGG700hhs7NIYbOzSGGzs0hhuHNIYb/zSGG/80hhv/tHt3/7R7d/+0e3f/tHt3jbR7dz+0e3c/tHt3P7R7d700hhu9NIYbOzSGGzs0hhs7NIYbhzSGG/80hhv/NIYb/7R7d/+0e3f/tHt3/7R7d/+0e3c/tHt3P7R7dz+0e3e9NIYbvTSGGzs0hhs7NIYbOzSGG/80hhv/NIYb/zSGG/+0e3f/tHt3/7R7d/+0e3f/tHt3jbR7dz+0e3c/tHt3vTSGG700hhs7NIYbOzSGG4c0hhv/NIYb/zSGG/80hhv/tHt3/7R7d/+0e3f/tHt3/7R7d420e3c/tHt3P7R7d700hhu9NIYbOzSGGzs0hhuHNIYb/zSGG/80hhv/NIYb/7R7d/+0e3f/tHt3/7R7d/+0e3f/tHt3P7R7dz+0e3e9NIYbvTSGGzs0hhs7NIYb/zSGG/80hhv/NIYb/zSGG/+0e3f/tHt3/7R7d/+0e3f/tHt3/7R7d420e3c/tHt3vTSGG700hhs7NIYbhzSGG/80hhv/NIYb/zSGG/80hhv/tHt3/7R7d/+0e3f/tHt3/7R7d/+0e3f/tHt3P7R7d700hhu9NIYbOzSGG/80hhv/NIYb/zSGG/80hhv/NIYb/7R7d420e3f/tHt3/7R7d/+0e3f/tHt3/7R7d420e3e9NIYbvTSGG4c0hhv/NIYb/zSGG/80hhv/NIYb/zSGG4cAAAAAtHt3jbR7d/+0e3f/tHt3/7R7d/+0e3f/tHt3jTSGG4c0hhv/NIYb/zSGG/80hhv/NIYb/zSGG4cAAAAAgAEAAAAAAAAGYAAADnAAAB54AAAeeAAADnAAAA5wAAAOcAAABmAAAAZgAAAGYAAAAkAAAAJAAAAAAAAAgAEAAA=="
+        rel="icon" type="image/x-icon"/>
     <style>
         body {
-            font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
             font-size: 14px;
             line-height: 1.428571429;
             color: #333;
             margin: 0;
         }
+
         a {
             color: gray;
             text-decoration: none
         }
+
         a:hover, a:focus {
             color: black;
             text-decoration: underline
         }
+
         a:focus {
             outline: thin dotted #333;
             outline: 5px auto -webkit-focus-ring-color;
             outline-offset: -2px
         }
+
         #container {
             min-width: 300px;
             width: 900px;
             margin: 60px 0 0 50px;
         }
+
         .pages {
             margin-left: 20px;
         }
-        .collections>a {
+
+        .collections > a {
             padding: 3px 6px;
         }
-        .collections>a.active {
+
+        .collections > a.active {
 
             background-color: gray;
             border: 1px solid gray;
             color: white;
         }
+
         .dbs {
             padding-right: 20px;
         }
+
         input[type="text"] {
             border: none;
             height: 22px
         }
+
         input.query, input.page {
             background: #131313;
             border: 0;
             height: 23px;
             color: white;
             font-size: 15px;
-            border-radius: 0px;
+            border-radius: 0;
             border-bottom: 1px solid #3f3f3f;
-            width: 270px;
+            width: 100%;
             padding-left: 5px;
         }
+
         input.page {
             width: 60px;
             text-align: right;
             padding-right: 5px;
         }
+
         .error {
             font-weight: bold;
             color: #d44950
         }
+
         .form-error {
-            float: right; padding-right: 30px;
+            padding-right: 30px;
+            margin-left: 30px;
         }
+
         #header {
             font-weight: bold;
             background-color: #222222;
@@ -252,13 +288,12 @@ indexes();
             border-bottom: 1px solid gray;
             z-index: 10;
         }
+
         .logo {
             font-weight: bold;
             margin-right: 30px;
         }
-        .items-count {
-            margin-left: 20px;
-        }
+
         #panel {
             right: 20px;
             position: absolute;
@@ -266,63 +301,79 @@ indexes();
             background-color: lightgoldenrodyellow;
             padding: 8px;
         }
+
         .title {
             font-weight: bold;
         }
+
         #db-list {
             width: 100px;
         }
+
         #collections {
             width: 110px;
         }
+
         #items-count {
 
+        }
+        tr td:first-child{
+            width:1%;
+            white-space:nowrap;
         }
     </style>
 </head>
 <body>
 <div id="header">
-    <div style="float: left">
-        <span class="logo">Phongo</span>
-            <span class="dbs">
-                DB
-                <select id="db-list" name="db">
-                    <?php foreach (vars('db_list') as $db): ?>
-                        <option value="<?= $db ?>" <?= isset($_GET['db']) && $db == $_GET['db'] ? 'selected="selected"':'' ?>><?= $db ?></option>
-                    <?php endforeach ?>
-                </select>
-            </span>
-            <span class="collections">
-            <?php if (vars('collections')): ?>
-                Collection
-                <select id="collections">
-                    <option></option>
-                    <?php foreach (vars('collections') as $collection): ?>
-                        <option <?= isset($_GET['collection']) && $_GET['collection'] == $collection ? 'selected':'' ?>>
-                            <?= $collection ?>
-                        </option>
-                    <?php endforeach ?>
-                </select>
-            <?php endif ?>
-            </span>
-        <?php if ($pagination = vars('pagination')): ?>
-            <span class="pages">
-                Page <?= $pagination ?>
-            </span>
-        <?php endif ?>
-    </div>
-    <div class="form-error">
-        <?php if (vars('collection')): ?>
-            <form>
-                <?php if (vars('find_error')): ?>
-                    <span class="error"><?= vars('find_error') ?></span>
-                <?php endif ?>
-                <input type="hidden" name="db" value="<?= vars('db') ?>" />
-                <input type="hidden" name="collection" value="<?= vars('collection') ?>" />
-                <input type="text" id="find" class="query" placeholder='{"userId": 1}' name="find" value='<?= isset($_GET['find']) ? str_replace("'", '"', $_GET['find']):'' ?>' />
-            </form>
-        <?php endif ?>
-    </div>
+    <table width="100%">
+        <tr>
+            <td>
+                <div>
+                    <span class="logo">Phongo</span>
+                    <span class="dbs">
+                        DB
+                        <select id="db-list" name="db">
+                            <?php foreach (vars('db_list') as $db): ?>
+                                <option
+                                    value="<?= $db ?>" <?= isset($_GET['db']) && $db == $_GET['db'] ? 'selected="selected"' : '' ?>><?= $db ?></option>
+                            <?php endforeach ?>
+                        </select>
+                    </span>
+                    <span class="collections">
+                    <?php if (vars('collections')): ?>
+                        Collection
+                        <select id="collections">
+                            <option></option>
+                            <?php foreach (vars('collections') as $collection): ?>
+                                <option <?= isset($_GET['collection']) && $_GET['collection'] == $collection ? 'selected' : '' ?>>
+                                    <?= $collection ?>
+                                </option>
+                            <?php endforeach ?>
+                        </select>
+                    <?php endif ?>
+                    </span>
+                    <?php if ($pagination = vars('pagination')): ?>
+                        <span class="pages">Page <?= $pagination ?></span>
+                    <?php endif ?>
+                </div>
+            </td>
+            <td>
+                <div class="form-error">
+                    <?php if (vars('collection')): ?>
+                        <form>
+                            <?php if (vars('find_error')): ?>
+                                <span class="error"><?= vars('find_error') ?></span>
+                            <?php endif ?>
+                            <input type="hidden" name="db" value="<?= vars('db') ?>"/>
+                            <input type="hidden" name="collection" value="<?= vars('collection') ?>"/>
+                            <input type="text" id="find" class="query" placeholder='{"userId": 1}' name="find"
+                                   value='<?= isset($_GET['find']) ? str_replace("'", '"', $_GET['find']) : '' ?>'/>
+                        </form>
+                    <?php endif ?>
+                </div>
+            </td>
+        </tr>
+    </table>
     <div style="clear: both"></div>
 </div>
 <div id="container">
@@ -333,12 +384,12 @@ indexes();
             </div>
         <?php endif ?>
         <?php if (vars('indexes')): ?>
-        <div class="title">Indexes</div>
-        <?php foreach (vars('indexes') as $index): ?>
-            <?php foreach ($index['key'] as $name => $key): ?>
-                <?= $name ?><br />
+            <div class="title">Indexes</div>
+            <?php foreach (vars('indexes') as $index): ?>
+                <?php foreach ($index['key'] as $name => $key): ?>
+                    <?= $name ?><br/>
+                <?php endforeach ?>
             <?php endforeach ?>
-        <?php endforeach ?>
         <?php endif ?>
     </div>
     <div>
@@ -364,10 +415,10 @@ indexes();
             document.location = '?db=' + db + (collection ? '&collection=' + collection : '');
         };
 
-        document.getElementById('page').onkeypress = function (e){
+        document.getElementById('page').onkeypress = function (e) {
             if (!e) e = window.event;
             var keyCode = e.keyCode || e.which;
-            if (keyCode == '13'){
+            if (keyCode == '13') {
                 var page = document.getElementById('page').value,
                     d = document.getElementById('db-list'),
                     db = d.options[d.selectedIndex].value,
@@ -375,7 +426,7 @@ indexes();
                     collection = c.options[c.selectedIndex].value,
                     f = document.getElementById('find').value;
 
-                document.location = '?db=' + db+ '&collection=' + collection + '&page=' + page + '&find=' + f;
+                document.location = '?db=' + db + '&collection=' + collection + '&page=' + page + '&find=' + f;
             }
         }
     }());
